@@ -44,15 +44,15 @@ void smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, i
 	char buffer[BUFFER_LENGTH];
 	int length = 0;
 	// infinite cicle for watching maildir for new letters
-    while (client_running)
-    {
+  //  while (client_running)
+   // {
 
        // printf('End\n');
 
-        struct string_list* list_names = get_new_files_names(new_directory_name, cur_directory_name);
-        free_string_list(list_names);
+      //  struct string_list* list_names = get_new_files_names(new_directory_name, cur_directory_name);
+       // free_string_list(list_names);
 
-        int a = 0;
+        // int a = 0;
 
 
       /*  length = read(file_descriptor, buffer, BUFFER_LENGTH);
@@ -86,7 +86,7 @@ void smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, i
 			char* file_name = parse_events(new_directory_name, buffer, length);
 			printf("file_name = %s\n", file_name);
         }	*/
-    }
+    // }
 }
 
 

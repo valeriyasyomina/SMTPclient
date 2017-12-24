@@ -18,6 +18,11 @@ void free_string_list(struct string_list* list)
 		while (cur)
 		{
 			cur = list->next;
+            if (list->value)
+            {
+                free(list->value);
+                list->value = NULL;
+            }
 			free(list);
 			list = cur;
 		}
@@ -34,7 +39,13 @@ struct string_list* add_string_to_list(struct string_list* list, char* value)
 	struct string_list* element = create_empty_string_list();
 	if (!element)
 		return NULL;
-	element->value = value;
+
+    int value_size = strlen(value);
+    element->value = (char*) malloc(value_size + 1);
+    if (!element->value)
+        return NULL;
+    strncpy(element->value, value, value_size);
+    element->value[value_size] = '\0';
 	element->next = list;
 	return element;
 }

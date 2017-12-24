@@ -1,5 +1,6 @@
 #include "message_header.h"
 #include <stdlib.h>
+#include <string.h>
 
 struct message_header* create_header(char* key, char* value)
 {
@@ -12,8 +13,19 @@ struct message_header* create_header(char* key, char* value)
 	if (!header)
 		return NULL;
 
-	header->key = key;
-	header->value = value;
+    int key_size = strlen(key);
+    header->key = (char*) malloc(key_size + 1);
+    if (!header->key)
+        return NULL;
+    strncpy(header->key, key, key_size);
+    header->key[key_size] = '\0';
+
+    int value_size = strlen(value);
+    header->value = (char*) malloc(value_size + 1);
+    if (!header->value)
+        return NULL;
+    strncpy(header->value, value, value_size);
+    header->value[value_size] = '\0';
 	return header;
 }
 

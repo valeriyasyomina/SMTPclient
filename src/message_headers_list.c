@@ -19,6 +19,11 @@ void free_message_headers_list(struct message_headers_list* message_headers_list
 		while (cur)
 		{
 			cur = message_headers_list->next;
+            if (message_headers_list->header)
+            {
+                free_message_header(message_headers_list->header);
+                message_headers_list->header = NULL;
+            }
 			free(message_headers_list);
 			message_headers_list = cur;
 		}
