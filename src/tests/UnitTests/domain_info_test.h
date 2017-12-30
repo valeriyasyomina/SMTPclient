@@ -1,5 +1,0 @@
-#ifndef DOMAIN_INFO_TEST_H
-#define DOMAIN_INFO_TEST_H
-
-#endif // DOMAIN_INFO_TEST_H
-
