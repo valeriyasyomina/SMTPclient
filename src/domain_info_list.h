@@ -1,0 +1,5 @@
+#ifndef DOMAIN_INFO_LIST_H
+#define DOMAIN_INFO_LIST_H
+
+#endif // DOMAIN_INFO_LIST_H
+

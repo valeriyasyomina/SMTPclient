@@ -1,0 +1,5 @@
+#ifndef LOGGER_PROCESS_H
+#define LOGGER_PROCESS_H
+
+#endif // LOGGER_PROCESS_H
+
