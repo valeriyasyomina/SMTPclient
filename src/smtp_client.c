@@ -1,19 +1,18 @@
 #include "smtp_client.h"
 
-
 static int client_running = 1;
 static int watch_directory = 0;
 static int file_descriptor = 0;
+static mqd_t mq;
 
 void signal_handler(int signum)
 {	
 	client_running = 0;	
-	free_resources(watch_directory, file_descriptor);
+    free_resources(watch_directory, file_descriptor, mq);
 }
 
-int start_smtp_client(char* new_directory_name, char* cur_directory_name)
+int start_smtp_client(char* new_directory_name, char* cur_directory_name, char* logger_fifo_name, int logger_flags)
 {
-	//int r= rename("/home/lera/Desktop/maildir/new/1.txt", "/home/lera/Desktop/maildir/cur/1.txt");
 	signal(SIGINT, signal_handler);
 
 	if (!new_directory_name)
@@ -29,20 +28,123 @@ int start_smtp_client(char* new_directory_name, char* cur_directory_name)
 			close(file_descriptor);
 		return watch_result;
 	}
-    smtp_client_main_loop(new_directory_name, cur_directory_name, file_descriptor);
-	return 0;	
+
+    mq = mq_open(logger_fifo_name, logger_flags);
+    CHECK((mqd_t)-1 != mq);
+
+    int result = smtp_client_main_loop(new_directory_name, cur_directory_name, file_descriptor, mq);
+
+    free_resources(watch_directory, file_descriptor, mq);
+
+    return result;
 }
 
-void free_resources(int watch_directory, int file_descriptor)
+void free_resources(int watch_directory, int file_descriptor, mqd_t mq)
 {
+    send_log_message(mq, 0, "STOP");
+    CHECK((mqd_t)-1 != mq_close(mq));
 	inotify_rm_watch(file_descriptor, watch_directory);
 	close(file_descriptor);
 }
 
-void smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, int file_descriptor)
+int smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, int file_descriptor, mqd_t logger)
 {
-	char buffer[BUFFER_LENGTH];
-	int length = 0;
+    printf("SMTP client started\n");
+    send_log_message(logger, DEBUG_LEVEL, "SMTP client started");
+    send_log_message(logger, DEBUG_LEVEL, "Waitings for incoming letters...");
+    while (client_running)
+    {
+        fd_set fdset;
+        FD_ZERO(&fdset);
+        FD_SET(file_descriptor, &fdset);
+        if (select(file_descriptor + 1, &fdset, NULL, NULL, NULL) == 1)
+        {
+           send_log_message(logger, DEBUG_LEVEL, "New letters appeared");
+           struct string_list* new_files_names = get_new_files_names(file_descriptor, new_directory_name);
+           if (!new_files_names)
+           {
+               send_log_message(logger, ERROR_LEVEL, "Get new letters names");
+               return NULL_DATA;
+           }
+           send_log_message(logger, DEBUG_LEVEL, "New letters names received");
+
+           struct string_list* cur_files_names = replace_files(new_files_names, new_directory_name, cur_directory_name);
+           free_string_list(new_files_names);
+           new_files_names = NULL;
+
+           if (!cur_files_names)
+           {
+               send_log_message(logger, ERROR_LEVEL, "Replace files to cur directory");
+               return NULL_DATA;
+           }
+           send_log_message(logger, DEBUG_LEVEL, "New letters replaced to cur directory");
+
+           struct message_list* messages = parse_files(cur_files_names);
+           free_string_list(cur_files_names);
+           cur_files_names = NULL;
+
+           if (!messages)
+           {
+               send_log_message(logger, ERROR_LEVEL, "Parse incoming letters");
+               return NULL_DATA;
+           }
+           send_log_message(logger, DEBUG_LEVEL, "Incoming letters successfully parsed");
+
+           struct domain_info_list* domains_list = create_domain_info_list(messages);
+           free_message_list(messages);
+           messages = NULL;
+
+           if (!domains_list)
+           {
+               send_log_message(logger, ERROR_LEVEL, "Create domains list");
+               return NULL_DATA;
+           }
+           send_log_message(logger, DEBUG_LEVEL, "Domains list successfully created");
+
+
+           int send_messages_result = send_messages(domains_list, mq);
+           free_domain_info_list(domains_list);
+           domains_list = NULL;
+
+           if (send_messages_result < 0)
+           {
+               send_log_message(logger, ERROR_LEVEL, "Send messges");
+               return ERROR_SEND_MESSAGES;
+           }
+        }
+    }
+
+    // TODO: parse dir for new files, now will think we've already done it
+
+  /*  struct string_list* files_names_list = NULL;
+
+    struct string_list* item1 = create_string_list_item("/home/lera/Desktop/maildir/cur/message1.txt");
+    struct string_list* item2 = create_string_list_item("/home/lera/Desktop/maildir/cur/message2.txt");
+
+    files_names_list = add_to_string_list(files_names_list, item1);
+    files_names_list = add_to_string_list(files_names_list, item2);
+
+    print_string_list(files_names_list);
+
+    struct message_list* messages = parse_files(files_names_list);
+    struct domain_info_list* domains_list = create_domain_info_list(messages);
+    send_messages(domains_list);
+
+    free_domain_info_list(domains_list);    
+    domains_list = NULL;
+
+    free_message_list(messages);
+    messages = NULL;
+    free_string_list(files_names_list);
+    files_names_list = NULL;
+
+    int a = 0; */
+
+
+
+
+
+
 	// infinite cicle for watching maildir for new letters
   //  while (client_running)
    // {
@@ -90,128 +192,235 @@ void smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, i
 }
 
 
-
-struct string_list* get_new_files_names(char* new_directory_name, char* cur_directory_name)
+struct domain_info_list* create_domain_info_list(struct message_list* messages)
 {
-    struct string_list* files_names_list = create_empty_string_list();
-    DIR *d = NULL;
-    struct dirent *dir = NULL;
-    d = opendir(new_directory_name);
-    if (d)
+    if (!messages)
+        return NULL;
+    struct domain_info_list* domains = NULL;
+    struct message_list* cur = messages;
+    while (cur)
     {
-      while ((dir = readdir(d)) != NULL)
-      {
-          printf("%s\n", dir->d_name);
+        domains = process_message(domains, cur->message);
+        cur = cur->next;
+    }
+    return domains;
+}
 
-      /*    int is_cur_directory = strcmp(dir->d_name, CURRENT_DIRECTORY);
-          int is_parent_directory = strcmp(dir->d_name, PARENT_DIRECTORY);
-          if (is_cur_directory != 0 && is_parent_directory != 0)
-          {
-              char* new_file_name = get_full_filename(new_directory_name, dir->d_name);
-              char* cur_file_name = get_full_filename(cur_directory_name, dir->d_name);
-           //   rename(new_file_name, cur_file_name);
-           //   rename_file(new_directory_name, cur_directory_name);
-              files_names_list = add_string_to_list(files_names_list, dir->d_name);
-              free(new_file_name);
-              new_file_name = NULL;
-              free(cur_file_name);
-              cur_file_name = NULL;
-          } */
-      }
-      closedir(d);
-     }
+struct domain_info_list* process_message(struct domain_info_list* domains, struct message* message)
+{
+    if (!message)
+        return NULL;
+    struct message_headers_list* cur = message->headers;
+    struct message_header* from_header = get_header_by_key(message->headers, HEADER_FROM);
+    while (cur)
+    {
+        if (strcmp(cur->header->key, HEADER_FROM) != 0)
+        {
+            char* domain_name = get_domain_name(cur->header);
+            struct domain_info_list* current_domain = get_domain_info_by_name(domains, domain_name);
+            struct message* current_message = NULL;
+            if (!current_domain)
+            {                
+                // add domain with name
+                struct domain_info* domain = create_domain_info_with_name(domain_name);
+               // domain = add_message_to_domain_info(domain, current_message);
+                current_domain = create_domain_info_list_item(domain);
+                domains = add_to_domain_info_list(domains, current_domain);
+            }            
+            current_message = get_message_by_id_from_domain(domains, message->id);
+            if (!current_message)
+            {
+                struct message_header* new_from_header = create_header(from_header->key, from_header->value);
+                current_message = create_empty_message();
+                set_message_data(current_message, message->data);
+                set_message_id(current_message, message->id);
+                current_message = add_header_to_message(current_message, new_from_header);
+
+                current_domain->info = add_message_to_domain_info(current_domain->info, current_message);
+            }
+            struct message_header* new_to_header = create_header(cur->header->key, cur->header->value);
+            current_message = add_header_to_message(current_message, new_to_header);
+
+            free(domain_name);
+            domain_name = NULL;
+        }
+        cur = cur->next;
+    }
+    return domains;
+}
+
+struct message_list* parse_files(struct string_list* file_names)
+{
+    if (!file_names)
+        return NULL;
+    struct message_list* list = NULL;
+    struct string_list* cur = file_names;
+    while (cur)
+    {
+        struct message* message = convert_to_message(cur->value);
+        struct message_list* item = create_message_list_item(message);
+        list = add_to_message_list(list, item);
+        cur = cur->next;
+    }
+    return list;
+}
+
+struct message* convert_to_message(char* file_name)
+{
+    FILE* file = open_file(file_name, "r");
+    if (!file)
+    {
+        printf("error open file\n");
+        return NULL;
+    }
+    struct message* message = create_empty_message();
+    message->id = parse_message_id(file);
+    struct message_headers_list* message_headers = parse_message_headers(file);
+    message->headers = message_headers;
+    char* message_data = read_message_data(file);
+    message->data = message_data;
+    return message;
+}
+
+char* parse_message_id(FILE* file)
+{
+    if (!file)
+        return NULL;
+    char buffer[MAX_BUFFER_SIZE];
+
+    fgets(buffer, MAX_BUFFER_SIZE, file);
+    return remove_new_line_from_buffer(buffer);
+}
+
+struct message_headers_list* parse_message_headers(FILE* file)
+{
+    if (!file)
+        return NULL;
+
+    struct message_headers_list* message_headers = NULL;
+
+    char buffer[MAX_BUFFER_SIZE];
+
+    while (fgets(buffer, MAX_BUFFER_SIZE, file) && strlen(buffer) != 1)
+    {
+      //  printf("Len = %d\n", strlen(buffer));
+        char* buffer_without_nl = remove_new_line_from_buffer(buffer);
+     //   printf("Line = %s\n", buffer);
+        struct message_header* header = message_header_from_string(buffer_without_nl);
+        struct message_headers_list* item = create_message_headers_list_item(header);
+        message_headers = add_to_message_headers_list(message_headers, item);
+        free(buffer_without_nl);
+        buffer_without_nl = NULL;
+    }
+    return message_headers;
+}
+
+char* remove_new_line_from_buffer(char* buffer)
+{
+    if (!buffer)
+        return NULL;
+    int buffer_length = strlen(buffer);
+    if (buffer[buffer_length - 1] != '\n')
+        return buffer;
+
+    char* new_buffer = (char*) malloc(buffer_length);
+    if (!new_buffer)
+        return NULL;
+    strncpy(new_buffer, buffer, buffer_length - 1);
+    new_buffer[buffer_length - 1] = '\0';
+    return new_buffer;
+}
+
+char* read_message_data(FILE* file)
+{
+    if (!file)
+        return NULL;
+
+    char* message_data = (char*) malloc(MAX_DATA_SIZE);
+    if (!message_data)
+        return NULL;
+
+    char symbol;
+    int index = 0;
+
+    while ((symbol = fgetc(file)) != EOF)
+    {
+        message_data[index] = symbol;
+        index++;
+    }
+    message_data[index] = '\0';
+    return message_data;
+}
+
+
+struct string_list* replace_files(struct string_list* files, char* src_dir, char* dest_dir)
+{
+    if (!files || !src_dir || !dest_dir)
+        return NULL;
+
+    struct string_list* result_files_names = NULL;
+    struct string_list* cur = files;
+    int replace_correct = 0;
+    while (cur && replace_correct >= 0)
+    {
+        char src_file_path[MAX_BUFFER_SIZE];
+        bzero(src_file_path, MAX_BUFFER_SIZE);
+        strncpy(src_file_path, src_dir, strlen(src_dir));
+        strcat(src_file_path, cur->value);
+
+        char dest_file_path[MAX_BUFFER_SIZE];
+        bzero(dest_file_path, MAX_BUFFER_SIZE);
+        strncpy(dest_file_path, dest_dir, strlen(dest_dir));
+        strcat(dest_file_path, cur->value);
+
+        replace_correct = rename(src_file_path, dest_file_path);
+        if (replace_correct >= 0)
+        {
+            struct string_list* item = create_string_list_item(dest_file_path);
+            result_files_names = add_to_string_list(result_files_names, item);
+        }
+        cur = cur->next;
+    }
+    return result_files_names;
+}
+
+
+struct string_list* get_new_files_names(int file_descriptor, char* new_directory_name)
+{
+    struct string_list* files_names_list = NULL;
+
+    size_t length = 0;
+    ioctl(file_descriptor, FIONREAD, &length);
+
+    if (length > 0)
+    {
+        char buffer[BUFFER_LENGTH];
+        bzero(buffer, BUFFER_LENGTH);
+        if (read(file_descriptor, buffer, length))
+        {
+            for (size_t offset = 0; offset < length; )
+            {
+                struct inotify_event *event = (struct inotify_event *) &buffer[offset];
+
+                if (event->len > 0)
+                {
+                    // we shall see just created files
+                    if (event->mask & IN_CREATE)
+                    {
+                        printf("File created %s\n", event->name);
+                    //    char full_file_name[MAX_BUFFER_SIZE];
+                   //     bzero(full_file_name, MAX_BUFFER_SIZE);
+                     //   strncpy(full_file_name, new_directory_name, strlen(new_directory_name));
+                     //   strcat(full_file_name, event->name);
+                        struct string_list* item = create_string_list_item(event->name);
+                        files_names_list = add_to_string_list(files_names_list, item);
+                    }
+                    offset += sizeof(*event) + event->len;
+                }
+            }
+        }
+    }
     return files_names_list;
-}
-
-char* parse_events(char* new_directory_name, char* buffer, int length)
-{
-	int i = 0;
-	char* filename = NULL;
-	while (i < length) 
-	{
-	    struct inotify_event *event = ( struct inotify_event * ) &buffer[i];
-	    if (event->len) 
-	    {
-	    	printf("event len = %d\n", event->len);
-	      if (event->mask & IN_CREATE) 
-	      {	    
-	      	filename = event->name;    
-	        //  printf( "The file %s was created.\n", event->name );
-	      //  char* full_filename = get_full_filename(new_directory_name, event->name);
-	         // printf("full filename = %s %d\n", full_filename, strlen(full_filename));
-	       // struct message* message = parse_message(full_filename);
-	         // free_message(message);
-	        
-	      }	    
-	    }
-		i += event->len;
-  	}
-  	return filename;
-}
-
-
-
-struct message* parse_message(char* file_name)
-{
-	// char* test = "/home/lera/Desktop/maildir/new/file.txt";
-	// printf("Origin file name %s %d\n",  test, strlen(test));
-	FILE* file = open_file(file_name, "r");
-	if (!file)
-	{
-		printf("error open file\n");
-		return NULL;
-	}
-
-	printf("file opened\n");
-
-	struct message* message = create_empty_message();
-	if (!message)
-	{
-		close_file(file);
-		return NULL;
-	}
-
-	// reader_message_headers(message, file);
-
-	return message;
-}
-
-struct message* read_message(struct message* message, FILE* file)
-{
-	if (!file)
-		return NULL;
-	char* message_data = (char*) malloc(MAX_DATA_SIZE);
-	if (!message_data)
-		return NULL;
-
-	char symbol;
-	int index = 0;
-
-	while ((symbol = fgetc(file)) != EOF)
-	{
-		message_data[index] = symbol;
-		index++;
-	}
-	message_data[index] = '\0';
-	message->data = message_data;
-	return message;
-
-}
-
-struct message* reader_message_headers(struct message* message, FILE* file)
-{
-	if (!file)
-		return NULL;
-	if (!message)
-		return NULL;
-
-	char buffer[MAX_BUFFER_SIZE];
-
-	while (fgets(buffer, MAX_BUFFER_SIZE, file))
-	{
-		printf("Line = %s\n", buffer);
-	}
-	return message;
 }
 
 
