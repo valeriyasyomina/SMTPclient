@@ -23,6 +23,7 @@ void test_set_message_data2()
     struct message* message = create_empty_message();
     set_message_data(message, NULL);
     CU_ASSERT_EQUAL(message->id, NULL);
+    free_message(message);
 }
 
 void test_set_message_data3()
@@ -46,6 +47,7 @@ void test_set_message_id2()
     struct message* message = create_empty_message();
     set_message_id(message, NULL);
     CU_ASSERT_EQUAL(message->id, NULL);
+    free_message(message);
 }
 
 void test_set_message_id3()
