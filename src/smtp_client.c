@@ -116,82 +116,6 @@ int smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, in
            }
         }
     }
-
-    // TODO: parse dir for new files, now will think we've already done it
-
-  /*  struct string_list* files_names_list = NULL;
-
-    struct string_list* item1 = create_string_list_item("/home/lera/Desktop/maildir/cur/message1.txt");
-    struct string_list* item2 = create_string_list_item("/home/lera/Desktop/maildir/cur/message2.txt");
-
-    files_names_list = add_to_string_list(files_names_list, item1);
-    files_names_list = add_to_string_list(files_names_list, item2);
-
-    print_string_list(files_names_list);
-
-    struct message_list* messages = parse_files(files_names_list);
-    struct domain_info_list* domains_list = create_domain_info_list(messages);
-    send_messages(domains_list);
-
-    free_domain_info_list(domains_list);    
-    domains_list = NULL;
-
-    free_message_list(messages);
-    messages = NULL;
-    free_string_list(files_names_list);
-    files_names_list = NULL;
-
-    int a = 0; */
-
-
-
-
-
-
-	// infinite cicle for watching maildir for new letters
-  //  while (client_running)
-   // {
-
-       // printf('End\n');
-
-      //  struct string_list* list_names = get_new_files_names(new_directory_name, cur_directory_name);
-       // free_string_list(list_names);
-
-        // int a = 0;
-
-
-      /*  length = read(file_descriptor, buffer, BUFFER_LENGTH);
-        if (length > 0)
-        {
-
-        struct dirent **namelist = NULL;
-        int files_number = scandir(new_directory_name, &namelist, NULL, alphasort);
-     //   printf("files in directory %d\n", files_number);
-
-        if (files_number > MIN_ENTITIES_NUMBER + 1)
-        {
-         //   printf("More files\n");
-            struct string_list* files_list = get_new_files_names(namelist, files_number);
-            free_string_list(files_list);
-            free(namelist);
-        }
-        } */
-
-
-    /*    while (n--) {
-                       printf("%s\n", namelist[n]->d_name);
-                       free(namelist[n]);
-                   } */
-
-		//printf("buffer = %s\n", buffer);
-		
-		// some changes in directory
-    /*	if (length > 0)
-		{
-			char* file_name = parse_events(new_directory_name, buffer, length);
-			printf("file_name = %s\n", file_name);
-        }	*/
-    // }
     return 0;
 }
 
@@ -248,10 +172,8 @@ struct domain_info_list* process_message(struct domain_info_list* domains, struc
             struct domain_info_list* current_domain = get_domain_info_by_name(domains, domain_name);
             struct message* current_message = NULL;
             if (!current_domain)
-            {                
-                // add domain with name
-                struct domain_info* domain = create_domain_info_with_name(domain_name);
-               // domain = add_message_to_domain_info(domain, current_message);
+            {
+                struct domain_info* domain = create_domain_info_with_name(domain_name);            
                 current_domain = create_domain_info_list_item(domain);
                 domains = add_to_domain_info_list(domains, current_domain);
             }            
@@ -333,9 +255,7 @@ struct message_headers_list* parse_message_headers(FILE* file)
 
     while (fgets(buffer, MAX_BUFFER_SIZE, file) && strlen(buffer) != 1)
     {
-      //  printf("Len = %d\n", strlen(buffer));
         char* buffer_without_nl = remove_new_line_from_buffer(buffer);
-     //   printf("Line = %s\n", buffer);
         struct message_header* header = message_header_from_string(buffer_without_nl);
         struct message_headers_list* item = create_message_headers_list_item(header);
         message_headers = add_to_message_headers_list(message_headers, item);
@@ -437,11 +357,7 @@ struct string_list* get_new_files_names(int file_descriptor, char* new_directory
                     // we shall see just created files
                     if (event->mask & IN_CREATE)
                     {
-                        printf("File created %s\n", event->name);
-                    //    char full_file_name[MAX_BUFFER_SIZE];
-                   //     bzero(full_file_name, MAX_BUFFER_SIZE);
-                     //   strncpy(full_file_name, new_directory_name, strlen(new_directory_name));
-                     //   strcat(full_file_name, event->name);
+                        printf("File created %s\n", event->name);                 
                         struct string_list* item = create_string_list_item(event->name);
                         files_names_list = add_to_string_list(files_names_list, item);
                     }

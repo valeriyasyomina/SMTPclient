@@ -6,7 +6,6 @@
 
 int main(int argc, char** argv)
 {
-    // "/home/lera/Desktop/maildir/new/", "/home/lera/Desktop/maildir/cur/", "/test_queue"
     if (argc != ARGS_NUMBER)
     {
         printf("Usage: ./client <new_dir_path> <cur_dir_path> <logger_queue_name> <attempts_number> <attempts_delay_sec>");

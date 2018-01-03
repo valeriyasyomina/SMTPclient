@@ -249,24 +249,20 @@ int try_connect_to_smtp_server(char* domain_name, int attempts_number, int attem
             connection_stablished = 1;
         cur = cur->next;
     }
-    free_xmlist(xmlist);
-    xmlist = NULL;
+ //   free_xmlist(xmlist);
+  //  xmlist = NULL;
     return smtp_socket;
 }
 
 void free_xmlist(struct firedns_mxlist* xmlist)
 {
-    struct firedns_mxlist* cur = xmlist;
-
-    while (cur)
+    struct firedns_mxlist* cur = NULL;
+    for (; xmlist; xmlist = cur)
     {
         cur = xmlist->next;
-      /*  if (xmlist->ip4list)
-            free_firedns_ip4list(xmlist->ip4list);
-        if (xmlist->ip6list)
-            free_firedns_ip6list(xmlist->ip6list); */
+
         free(xmlist);
-        xmlist = cur;
+        xmlist = NULL;
     }
 }
 
@@ -312,8 +308,6 @@ int create_socket(const char* host, int port, int attempts_number, int attempts_
         server.sin_addr.s_addr = inet_addr(inet_ntoa(*addr_list[i]));
         server.sin_port = htons(SMTP_SERVER_PORT);
 
-      /*  int socket_descriptor = socket(AF_INET , SOCK_STREAM , 0);
-        int connect_result = connect(socket_descriptor,(struct sockaddr *)&server, sizeof(server)); */
         int socket_descriptor = try_connect_to_socket(server, attempts_number, attempts_delay);
         if (socket_descriptor > 0)
         {
