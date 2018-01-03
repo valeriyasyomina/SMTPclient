@@ -36,7 +36,7 @@ int start_logger_process(char* logger_queue_name, char* logger_file_name, int fl
     do
     {
         char buffer[MAX_LOGGER_MESSAGE_SIZE];
-        int message_prioritet = 0;
+        unsigned int message_prioritet = 0;
         logger_result = mq_receive(logger_descriptor, buffer, MAX_LOGGER_MESSAGE_SIZE, &message_prioritet);
 
        // CHECK(logger_result >= 0);
