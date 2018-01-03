@@ -1,7 +1,7 @@
 #!/bin/bash
 
-new_maildir_path="/home/lera/Desktop/maildir/new/"
-cur_maildir_path="/home/lera/Desktop/maildir/cur/"
+new_maildir_path="./maildir/new/"
+cur_maildir_path="./maildir/cur/"
 logger_queue_name="/test_queue"
 attemps_number=3
 attermps_delay=1
