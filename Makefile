@@ -28,6 +28,7 @@ report:
 clean:
 	make -C $(CLIENT_PATH) clean
 	make -C $(UNIT_TESTS_PATH) clean
+	make -C $(SYSTEM_TESTS_PATH) clean
 	make -C $(REPORT_PATH) clean
 	
 .PHONY: all client tests unit_tests system_tests report
