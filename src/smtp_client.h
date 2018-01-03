@@ -36,11 +36,12 @@
 #include "domain_info_list.h"
 #include "file.h"
 #include "smtp_operation.h"
+#include "smtp_client_input_data.h"
 #include "logger.h"
 
-int start_smtp_client(char* new_directory_name, char* cur_directory_name, char* logger_fifo_name, int logger_flags);
+int start_smtp_client(struct smtp_client_input_data input_data);
 int add_directory_watch(char* watch_directory_name, uint32_t mask, int* watch_directory, int* file_descriptor);
-int smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, int file_descriptor, mqd_t logger);
+int smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, int file_descriptor, mqd_t logger, int attempts_number, int attempts_delay);
 void signal_handler(int signum);
 void free_resources(int watch_directory, int file_descriptor, mqd_t mq);
 
@@ -59,5 +60,6 @@ struct domain_info_list* create_domain_info_list(struct message_list* messages);
 struct domain_info_list* process_message(struct domain_info_list* domains, struct message* message);
 
 int get_logger_descriptor(char* logger_name, mode_t mode);
+void clean_directory(char* dir_name);
 
 #endif
