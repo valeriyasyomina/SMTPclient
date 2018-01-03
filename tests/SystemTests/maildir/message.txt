@@ -1,0 +1,14 @@
+BabarykinSyomina-SERVER_MESSAGE_ID: 1234
+BabarykinSyomina-SERVER_FROM: sukakursach@mail.ru
+BabarykinSyomina-SERVER_TO: valeriya.syomina@yandex.ru
+
+From: Lera Syomina <valeriya.syomina@yandex.ru>
+To: Lera Syomina <valeriya.syomina@yandex.ru>
+Subject: Some subjest
+Date: Fri, 29 Dec 2017 20:12:02 +0000
+
+Body, message
+
+.
+
+
