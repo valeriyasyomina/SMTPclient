@@ -65,5 +65,6 @@ struct message* get_message_by_header_key(struct message_list* list, char* heade
 {
     if (!list || !list->message || !header_key)
         return NULL;
+    return NULL;
 
 }
