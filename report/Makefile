@@ -28,7 +28,7 @@ report:
 	cp ../tests/SystemTests/SystemTests.txt ./includes/SystemTests.txt
 
 	rm ./includes/valgrind_SystemTests.txt
-	cp ../tests/SystemTests/valgrind_SystemTests.txt ./includes/valgrind_SystemTests.txt
+	cp ../tests/SystemTests/maildir/valgrind_SystemTests.txt ./includes/valgrind_SystemTests.txt
 	
 	pdflatex report.tex
 

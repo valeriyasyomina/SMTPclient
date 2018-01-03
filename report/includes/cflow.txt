@@ -119,8 +119,6 @@ main():
                                 socket()
                                 connect()
                                 sleep()
-                        free_xmlist():
-                            free()
                     bzero()
                     read()
                     strtol()
