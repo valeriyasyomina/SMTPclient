@@ -11,17 +11,17 @@ void signal_handler(int signum)
     free_resources(watch_directory, file_descriptor, mq);
 }
 
-int start_smtp_client(char* new_directory_name, char* cur_directory_name, char* logger_fifo_name, int logger_flags)
+int start_smtp_client(struct smtp_client_input_data input_data)
 {
 	signal(SIGINT, signal_handler);
 
-	if (!new_directory_name)
+    if (!input_data.new_directory_name)
 		return ERROR_DIR_NAME;
 
-	if (!cur_directory_name)
+    if (!input_data.cur_directory_name)
 		return ERROR_DIR_NAME;
 
-	int watch_result = add_directory_watch(new_directory_name, WATCH_FLAGS, &watch_directory, &file_descriptor);
+    int watch_result = add_directory_watch(input_data.new_directory_name, WATCH_FLAGS, &watch_directory, &file_descriptor);
 	if (watch_result < 0)
 	{
 		if (watch_result == WATCH_DIR_RESCRIPTOR_ERROR)
@@ -29,10 +29,11 @@ int start_smtp_client(char* new_directory_name, char* cur_directory_name, char* 
 		return watch_result;
 	}
 
-    mq = mq_open(logger_fifo_name, logger_flags);
+    mq = mq_open(input_data.logger_fifo_name, input_data.logger_flags);
     CHECK((mqd_t)-1 != mq);
 
-    int result = smtp_client_main_loop(new_directory_name, cur_directory_name, file_descriptor, mq);
+    int result = smtp_client_main_loop(input_data.new_directory_name, input_data.cur_directory_name, file_descriptor, mq,
+                                       input_data.attempts_number, input_data.attempts_delay);
 
     free_resources(watch_directory, file_descriptor, mq);
 
@@ -47,7 +48,7 @@ void free_resources(int watch_directory, int file_descriptor, mqd_t mq)
 	close(file_descriptor);
 }
 
-int smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, int file_descriptor, mqd_t logger)
+int smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, int file_descriptor, mqd_t logger, int attempts_number, int attempts_delay)
 {
     printf("SMTP client started\n");
     send_log_message(logger, DEBUG_LEVEL, "SMTP client started");
@@ -102,9 +103,11 @@ int smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, in
            send_log_message(logger, DEBUG_LEVEL, "Domains list successfully created");
 
 
-           int send_messages_result = send_messages(domains_list, mq);
+           int send_messages_result = send_messages(domains_list, mq, attempts_number, attempts_delay);
            free_domain_info_list(domains_list);
            domains_list = NULL;
+
+           clean_directory(cur_directory_name);
 
            if (send_messages_result < 0)
            {
@@ -189,6 +192,31 @@ int smtp_client_main_loop(char* new_directory_name, char* cur_directory_name, in
 			printf("file_name = %s\n", file_name);
         }	*/
     // }
+    return 0;
+}
+
+
+void clean_directory(char* dir_name)
+{
+    struct dirent* ep = NULL;
+    DIR* dp = opendir(dir_name);
+    if (dp != NULL)
+    {
+        ep = readdir(dp);
+        while (ep != NULL)
+        {
+            if (strcmp(ep->d_name, PARENT_DIRECTORY) != 0 && strcmp(ep->d_name, CURRENT_DIRECTORY) != 0)
+            {
+                char dest_file_path[MAX_BUFFER_SIZE];
+                bzero(dest_file_path, MAX_BUFFER_SIZE);
+                strncpy(dest_file_path, dir_name, strlen(dir_name));
+                strcat(dest_file_path, ep->d_name);
+                remove(dest_file_path);
+            }
+            ep = readdir(dp);
+        }
+    }
+    closedir(dp);
 }
 
 
@@ -279,6 +307,8 @@ struct message* convert_to_message(char* file_name)
     message->headers = message_headers;
     char* message_data = read_message_data(file);
     message->data = message_data;
+
+    close_file(file);
     return message;
 }
 
