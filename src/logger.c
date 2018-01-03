@@ -49,7 +49,7 @@ int send_log_message(mqd_t logger_descriptor, int logger_level, char* logger_dat
 
 int receive_log_message(mqd_t logger_descriptor, char** buffer, int buffer_length)
 {
-    int message_prioritet = 0;
+    unsigned int message_prioritet = 0;
     int result = mq_receive(logger_descriptor, *buffer, buffer_length, &message_prioritet);
     if (result < 0)
         return ERROR_RECEIVE_MESSAGE;
