@@ -37,6 +37,7 @@ HEADERS += \
     smtp_operation.h \
     logger.h \
     logger_process.h\
-    /usr/include/mqueue.h
+    /usr/include/mqueue.h \
+    smtp_client_input_data.h
 
 LIBS += "/usr/lib/libfiredns.so"
