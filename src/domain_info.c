@@ -29,6 +29,7 @@ void free_domain_info(struct domain_info* info)
             free_message_list(info->messages);
             info->messages = NULL;
         }
+        free(info);
     }
 }
 
