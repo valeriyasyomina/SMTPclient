@@ -75,6 +75,7 @@ void free_message_header(struct message_header* message_header)
 			free(message_header->value);
 			message_header->value = NULL;
 		}
+        free(message_header);
 		message_header = NULL;
 	}
 }
