@@ -1,0 +1,76 @@
+
+
+     CUnit - A unit testing framework for C - Version 2.1-3
+     http://cunit.sourceforge.net/
+
+
+Suite: message_header_suite
+  Test: test_message_header_from_string1 ...passed
+  Test: test_message_header_from_string1 ...passed
+  Test: test_create_header1 ...passed
+  Test: test_create_header2 ...passed
+  Test: test_create_header3 ...passed
+  Test: test_create_header4 ...passed
+  Test: test_compare_message_header_key1 ...passed
+  Test: test_compare_message_header_key2 ...passed
+Suite: message_header list_suite
+  Test: test_create_empty_message_headers_list1 ...passed
+  Test: test_create_message_headers_list_item1 ...passed
+  Test: test_create_message_headers_list_item2 ...passed
+  Test: test_create_message_headers_list_item3 ...passed
+  Test: test_create_message_headers_list_item4 ...passed
+  Test: test_create_message_headers_list_item5 ...passed
+Suite: message_suite
+  Test: test_create_message_with_data1 ...passed
+  Test: test_create_message_with_data2 ...passed
+  Test: test_create_empty_message1 ...passed
+  Test: test_set_message_data1 ...passed
+  Test: test_set_message_data2 ...passed
+  Test: test_set_message_data3 ...passed
+  Test: test_set_message_id1 ...passed
+  Test: test_set_message_id2 ...passed
+  Test: test_set_message_id3 ...passed
+Suite: domain_info_suite
+  Test: test_get_domain_name_from_header_value1 ...passed
+  Test: test_get_domain_name_from_header_value2 ...passed
+  Test: test_create_domain_info_with_name1 ...passed
+  Test: test_create_domain_info_with_name2 ...passed
+  Test: test_create_domain_info_with_name3 ...passed
+  Test: test_create_domain_info_with_name4 ...passed
+  Test: test_create_domain_info_with_name5 ...passed
+Suite: domain_info_list suite
+  Test: test_create_empty_domain_info_list1 ...passed
+  Test: test_create_domain_info_list_item1 ...passed
+  Test: test_create_domain_info_list_item2 ...passed
+  Test: test_create_domain_info_list_item3 ...passed
+  Test: test_create_domain_info_list_item4 ...passed
+  Test: test_create_domain_info_list_item5 ...passed
+Suite: string_suite
+  Test: test_remove_new_line_from_buffer1 ...passed
+  Test: test_remove_new_line_from_buffer2 ...passed
+  Test: test_remove_new_line_from_buffer3 ...passed
+  Test: test_remove_new_line_from_buffer4 ...passed
+  Test: test_remove_new_line_from_buffer5 ...passed
+  Test: test_remove_new_line_from_buffer6 ...passed
+  Test: test_remove_new_line_from_buffer7 ...passed
+Suite: string list_suite
+  Test: test_create_string_list_item1 ...passed
+  Test: test_create_string_list_item2 ...passed
+  Test: test_create_string_list_item3 ...passed
+  Test: test_create_string_list_item4 ...passed
+  Test: test_create_string_list_item5 ...passed
+  Test: test_add_to_string_list1 ...passed
+  Test: test_add_to_string_list2 ...passed
+  Test: test_add_to_string_list3 ...passed
+  Test: test_add_to_string_list4 ...passed
+  Test: test_add_to_string_list5 ...passed
+
+Run Summary:    Type  Total    Ran Passed Failed Inactive
+              suites      7      7    n/a      0        0
+               tests     53     53     53      0        0
+             asserts     75     75     75      0      n/a
+
+Elapsed time =    0.000 seconds
+
+
+

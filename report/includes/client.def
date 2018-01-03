@@ -1,0 +1,37 @@
+autogen definitions fsm;
+
+method = case;
+type   = loop;
+prefix = client_fsm;
+
+/* Состояния init и done уже есть */
+
+state  = listening_directory, mail_lists_prepairing, dns_resolving, error, opening_socket, try_connect, ehlo, mail, data, quit, mail_sended;
+event =  mail_appearance, lists_formed, dns_resolved, socket_open, connected_to_mx, connect_fail, command_ehlo, command_mail, command_rcpt, command_data, command_quit, iteration, iteration_end, mail_list_iteration, dns_resolved_with_error;
+
+transition =
+{ tst  = listening_directory; tev = mail_appearance; next = mail_lists_prepairing; },
+{ tst  = mail_lists_prepairing; tev = lists_formed; next = dns_resolving; },
+{ tst  = dns_resolving; tev = dns_resolved; next = opening_socket; },
+{ tst  = dns_resolving; tev = dns_resolved_with_error; next = error; },
+{ tst  = opening_socket; tev = socket_open; next = try_connect; },
+{ tst  = try_connect; tev = connected_to_mx; next = ready_to_transmit; },
+{ tst  = try_connect; tev = connect_fail; next = error; },
+{ tst  = ready_to_transmit; tev = command_helo; next = ehlo; },
+{ tst  = ready_to_transmit; tev = transmission_error; next = error; },
+{ tst  = ehlo; tev = command_mail; next = mail; },
+{ tst  = ehlo; tev = transmission_error; next = error; },
+{ tst  = mail; tev = command_rcpt; next = rcpt; },
+{ tst  = mail; tev = transmission_error; next = error; },
+{ tst  = rcpt; tev = command_rcpt; next = data; },
+{ tst  = rcpt; tev = transmission_error; next = error; },
+{ tst  = data; tev = command_mail; next = quit; },
+{ tst  = data; tev = transmission_error; next = error; },
+{ tst  = quit; tev = command_quit; next = mail_sended; },
+{ tst  = quit; tev = transmission_error; next = error; },
+{ tst  = mail_sended; tev = mail_list_iteration; next = ready_to_transmit; },
+{ tst  = mail_sended; tev = iteration; next = dns_resolving; },
+{ tst  = mail_sended; tev = iteration_end; next = listening_directory; },
+{ tst  = error; tev = iteration; next = dns_resolving; },
+{ tst  = error; tev = iteration_end; next = listening_directory; };
+

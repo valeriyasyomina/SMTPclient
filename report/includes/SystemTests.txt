@@ -1,0 +1,26 @@
+[DEBUG] >> SMTP client started
+[DEBUG] >> Waitings for incoming letters...
+[DEBUG] >> New letters appeared
+[DEBUG] >> New letters names received
+[DEBUG] >> New letters replaced to cur directory
+[DEBUG] >> Incoming letters successfully parsed
+[DEBUG] >> Domains list successfully created
+[DEBUG] >> Start sending messages...
+[DEBUG] >> Sending messages to domain yandex.ru
+[DEBUG] >> Connecting to SMTP server...
+[DEBUG] >> Connection successufully established
+[DEBUG] >> Sending EHLO command
+[DEBUG] >> EHLO command successufully send
+[DEBUG] >> Sending message...
+[DEBUG] >> Send MAIL FROM command
+[DEBUG] >> MAIL FROM command successufully send
+[DEBUG] >> Send RCPT TO command
+[DEBUG] >> RCPT TO command successufully send
+[DEBUG] >> Send DATA command
+[DEBUG] >> DATA command successufully send
+[DEBUG] >> Send message body
+[DEBUG] >> Message successufully send
+[DEBUG] >> Domain's messages' successufully send
+[DEBUG] >> Sending QUIT command
+[DEBUG] >> QUIT command successufully send
+[DEBUG] >> All messages successfully send
