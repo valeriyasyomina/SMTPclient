@@ -26,6 +26,7 @@ struct message* create_message_width_data(char* data)
     strncpy(message->data, data, data_size);
     message->data[data_size] = '\0';
     message->headers = NULL;
+    message->id = NULL;
     return message;
 }
 
@@ -78,6 +79,7 @@ void free_message(struct message* message)
         }
 		free_message_headers_list(message->headers);
         message->headers = NULL;
+        free(message);
 	}
 }
 
